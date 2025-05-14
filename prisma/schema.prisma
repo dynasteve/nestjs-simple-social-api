@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  username String? @unique
+  email String?
+
+  password String
+
+  bio String?
+  profilePicture String?
+
+  //Relationships
+  Post Post[]
+  Comment Comment[]
+  Like Like[]
+  Followers Follow[] @relation("Follower")
+  Following Follow[] @relation("Following")
+  Notification Notification[] @relation("NotificationsReceiver")
+  NotificationSender Notification[] @relation("NotificationsSender")
+
+  @@map("Users")
+}
+
+model Post {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId String
+  content String
+  imageUrl String?
+
+  // Relationships
+  author User @relation(fields: [authorId], references: [id])
+  Comment Comment[]
+  Like Like[]
+  Notifications Notification[]
+
+  @@map("Posts")
+}
+
+model Comment {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  postId String
+  userId String
+  body String
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id])
+
+  @@map("Comments")
+}
+
+model Like {
+  id String @id @default(uuid())
+
+  userId String
+  postId String
+  
+  createdAt DateTime @default(now())
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id])
+
+  @@map("Likes")
+}
+
+model Follow {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now())
+  followerId String
+  followingId String
+
+  follower User @relation(name: "Follower" ,fields: [followerId], references: [id])
+  following User @relation(name: "Following" ,fields: [followingId], references: [id])
+
+  // Relationships
+
+  @@map("Follows")
+}
+
+model Notification {
+  id String @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  type String
+  
+  userId String
+  fromUserId String?
+  postId String?
+
+  read Boolean @default(false)
+
+  user User @relation(name: "NotificationsReceiver", fields: [userId], references: [id])
+  fromUser User? @relation(name: "NotificationsSender", fields: [fromUserId], references: [id])
+  post Post? @relation(fields: [postId], references: [id])
+
+  @@map("Notifications")
+}
